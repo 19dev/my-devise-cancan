@@ -1,4 +1,5 @@
 class ArticlesController < ApplicationController
+  load_and_authorize_resource
   # GET /articles
   # GET /articles.json
   def index
@@ -41,6 +42,7 @@ class ArticlesController < ApplicationController
   # POST /articles.json
   def create
     @article = Article.new(params[:article])
+    @article.user = current_user
 
     respond_to do |format|
       if @article.save
@@ -57,6 +59,7 @@ class ArticlesController < ApplicationController
   # PUT /articles/1.json
   def update
     @article = Article.find(params[:id])
+    @article.user = current_user
 
     respond_to do |format|
       if @article.update_attributes(params[:article])
