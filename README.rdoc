@@ -1,3 +1,11 @@
+= Kısaca
+
+Üç dal var: master, devise, cancan
+
+- devise: sadece sign up + sign in yeteneği
+
+- cancan: devise + kullanıcıların yetkilendirilmesi
+
 = Introduction
 
 This is an easy step-by-step demonstration of how to quickly set up a
