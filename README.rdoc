@@ -1,261 +1,354 @@
-== Welcome to Rails
+= Introduction
 
-Rails is a web-application framework that includes everything needed to create
-database-backed web applications according to the Model-View-Control pattern.
+This is an easy step-by-step demonstration of how to quickly set up a
+{Rails 3.1}[https://github.com/rails/rails/tree/3-1-stable] +
+Devise[https://github.com/plataformatec/devise] +
+CanCan[https://github.com/ryanb/cancan]
+environment.
 
-This pattern splits the view (also called the presentation) into "dumb"
-templates that are primarily responsible for inserting pre-built data in between
-HTML tags. The model contains the "smart" domain objects (such as Account,
-Product, Person, Post) that holds all the business logic and knows how to
-persist themselves to a database. The controller handles the incoming requests
-(such as Save New Account, Update Product, Show Post) by manipulating the model
-and directing data to the view.
+It was made during the meetup Paris.rb[http://www.meetup.com/parisrb/events/38333772/] on 8th November 2011.
 
-In Rails, the model is handled by what's called an object-relational mapping
-layer entitled Active Record. This layer allows you to present the data from
-database rows as objects and embellish these data objects with business logic
-methods. You can read more about Active Record in
-link:files/vendor/rails/activerecord/README.html.
+= Setting up
 
-The controller and view are handled by the Action Pack, which handles both
-layers by its two parts: Action View and Action Controller. These two layers
-are bundled in a single package due to their heavy interdependence. This is
-unlike the relationship between the Active Record and Action Pack that is much
-more separate. Each of these packages can be used independently outside of
-Rails. You can read more about Action Pack in
-link:files/vendor/rails/actionpack/README.html.
+== Rails 3.1
 
+Run in your terminal
 
-== Getting Started
+  gem install rails --version '~>3.1'
+  rails new demo-devise-cancan
+  cd demo-devise-cancan
 
-1. At the command prompt, create a new Rails application:
-       <tt>rails new myapp</tt> (where <tt>myapp</tt> is the application name)
+== Authentication with Devise
 
-2. Change directory to <tt>myapp</tt> and start the web server:
-       <tt>cd myapp; rails server</tt> (run with --help for options)
+Add into your Gemfile
 
-3. Go to http://localhost:3000/ and you'll see:
-       "Welcome aboard: You're riding Ruby on Rails!"
+  gem 'devise'
 
-4. Follow the guidelines to start developing your application. You can find
-the following resources handy:
+Then run in your terminal
 
-* The Getting Started Guide: http://guides.rubyonrails.org/getting_started.html
-* Ruby on Rails Tutorial Book: http://www.railstutorial.org/
+  bundle install
 
+Set up Devise for Rails
 
-== Debugging Rails
+  rails generate devise:install
 
-Sometimes your application goes wrong. Fortunately there are a lot of tools that
-will help you debug it and get it back on the rails.
+Create an User model using Devise
 
-First area to check is the application log files. Have "tail -f" commands
-running on the server.log and development.log. Rails will automatically display
-debugging and runtime information to these files. Debugging info will also be
-shown in the browser on requests from 127.0.0.1.
+  rails generate devise User
 
-You can also log your own messages directly into the log file from your code
-using the Ruby logger class from inside your controllers. Example:
+Have a look on your your User model
 
-  class WeblogController < ActionController::Base
-    def destroy
-      @weblog = Weblog.find(params[:id])
-      @weblog.destroy
-      logger.info("#{Time.now} Destroyed Weblog ID ##{@weblog.id}!")
+  class User < ActiveRecord::Base
+    # Include default devise modules. Others available are:
+    # :token_authenticatable, :encryptable, :confirmable, :lockable, :timeoutable and :omniauthable
+    devise :database_authenticatable, :registerable,
+           :recoverable, :rememberable, :trackable, :validatable
+
+    # Setup accessible (or protected) attributes for your model
+    attr_accessible :email, :password, :password_confirmation, :remember_me
+  end
+
+Devise brings many usefull functionalities for authentication. More details on Devise[https://github.com/plataformatec/devise] github page.
+
+Now, let's have a look on what Devise do on client-side.
+
+But first we have to delete index.html file in /public
+
+  rm public/index.html
+
+And we need to create a resource like an Article for example
+
+  rails generate scaffold Article title:string content:text
+
+Migrate your database
+
+  rake db:migrate
+
+Add in your routes.rb file this rule
+
+  root :to => 'articles#index'
+
+Your file should now looks like this
+
+  DemoDeviseCancan::Application.routes.draw do
+    resources :articles
+    devise_for :users
+    root :to => 'articles#index'
+  end
+
+Open a new terminal and lauch your server
+
+  rails server
+
+Then open your web browser and go to http://localhost:3000/ you should see an empty listing for articles. Cool, it works !
+But there is no user authentication, so let's add make your application more private by always requiring user authentication.
+
+Open your application's controller /app/controllers/application_controller.rb and add this line
+
+  before_filter :authenticate_user!
+
+It should looks like this
+
+  class ApplicationController < ActionController::Base
+    before_filter :authenticate_user!
+    protect_from_forgery
+  end
+
+Now refresh your browser and it should redirect you to a sign in form. Sign up and you should be signed in. Cool !
+
+It should be better if your default layout show us with wich user I am signed in.
+So add theses lines in your /app/views/layouts/application.html.erb between body tags
+
+  <% if user_signed_in? %>
+    Hi, you are signed in with <%= current_user.email %> |
+    <%= link_to "Sign out", destroy_user_session_path, :method => :delete %>
+  <% end %>
+
+Refresh your web browser, you can now show your email address !
+
+Devise it's perfectly implemented into your app. Cool !
+But, as you can see, anybody who is signed in can edit an article your created.
+This is why we will implement now CanCan.
+
+== Authorization with CanCan
+
+Add into your Gemfile
+
+  gem 'cancan'
+
+Then run in your terminal
+
+  bundle install
+
+Set up CanCan for Rails
+
+  rails generate cancan:ability
+
+It should create a new model app/models/ability.rb where all permissions will be setting up
+
+But first of all, we need to manage user with your articles
+
+Generate a new migration
+
+  rails generate migration AddUserOnArticles
+
+Open the file that has just been created at /db/migrate/201111XXXXXXXX_add_user_on_articles.rb
+
+Add add the column. Your file should looks like this
+
+  class AddUserOnArticles < ActiveRecord::Migration
+    def up
+      add_column :articles, :user_id, :reference
+    end
+
+    def down
     end
   end
 
-The result will be a message in your log file along the lines of:
+Migrate your database
 
-  Mon Oct 08 14:22:29 +1000 2007 Destroyed Weblog ID #1!
+  rake db:migrate
 
-More information on how to use the logger is at http://www.ruby-doc.org/core/
+Add into your article model this line
 
-Also, Ruby documentation can be found at http://www.ruby-lang.org/. There are
-several books available online as well:
+  belongs_to :user
 
-* Programming Ruby: http://www.ruby-doc.org/docs/ProgrammingRuby/ (Pickaxe)
-* Learn to Program: http://pine.fm/LearnToProgram/ (a beginners guide)
+Let's edit your articles controller /app/controllers/articles_controller.rb to save the user everytime an article is both created or updated
 
-These two books will bring you up to speed on the Ruby language and also on
-programming in general.
+Your method create should looks like this
 
+  def create
+    @article = Article.new(params[:article])
+    @article.user = current_user
 
-== Debugger
-
-Debugger support is available through the debugger command when you start your
-Mongrel or WEBrick server with --debugger. This means that you can break out of
-execution at any point in the code, investigate and change the model, and then,
-resume execution! You need to install ruby-debug to run the server in debugging
-mode. With gems, use <tt>sudo gem install ruby-debug</tt>. Example:
-
-  class WeblogController < ActionController::Base
-    def index
-      @posts = Post.all
-      debugger
+    respond_to do |format|
+      if @article.save
+        format.html { redirect_to @article, notice: 'Article was successfully created.' }
+        format.json { render json: @article, status: :created, location: @article }
+      else
+        format.html { render action: "new" }
+        format.json { render json: @article.errors, status: :unprocessable_entity }
+      end
     end
   end
 
-So the controller will accept the action, run the first line, then present you
-with a IRB prompt in the server window. Here you can do things like:
+And your method update like this
 
-  >> @posts.inspect
-  => "[#<Post:0x14a6be8
-          @attributes={"title"=>nil, "body"=>nil, "id"=>"1"}>,
-       #<Post:0x14a6620
-          @attributes={"title"=>"Rails", "body"=>"Only ten..", "id"=>"2"}>]"
-  >> @posts.first.title = "hello from a debugger"
-  => "hello from a debugger"
+  def update
+    @article = Article.find(params[:id])
+    @article.user = current_user
 
-...and even better, you can examine how your runtime objects actually work:
+    respond_to do |format|
+      if @article.update_attributes(params[:article])
+        format.html { redirect_to @article, notice: 'Article was successfully updated.' }
+        format.json { head :ok }
+      else
+        format.html { render action: "edit" }
+        format.json { render json: @article.errors, status: :unprocessable_entity }
+      end
+    end
+  end
 
-  >> f = @posts.first
-  => #<Post:0x13630c4 @attributes={"title"=>nil, "body"=>nil, "id"=>"1"}>
-  >> f.
-  Display all 152 possibilities? (y or n)
+Let's say to your articles controller to check permissions on each action, by adding this line at the top of the controller
 
-Finally, when you're ready to resume execution, you can enter "cont".
+  load_and_authorize_resource
 
+Restart your server (because we have ran bundle install),
+and refresh your browser to http://localhost:3000/articles you should not be able to access to this page.
+Great that means it works !
 
-== Console
+So let's now customize your ability model /app/models/ability.rb
+and say every user can read and create articles but can only update and destroy his own article
 
-The console is a Ruby shell, which allows you to interact with your
-application's domain model. Here you'll have all parts of the application
-configured, just like it is when the application is running. You can inspect
-domain models, change values, and save to the database. Starting the script
-without arguments will launch it in the development environment.
+Your ability file should looks like this
 
-To start the console, run <tt>rails console</tt> from the application
-directory.
+  class Ability
+    include CanCan::Ability
 
-Options:
+    def initialize(user)
+      user ||= User.new # guest user (not logged in)
 
-* Passing the <tt>-s, --sandbox</tt> argument will rollback any modifications
-  made to the database.
-* Passing an environment name as an argument will load the corresponding
-  environment. Example: <tt>rails console production</tt>.
+      if user.persisted?
+        can :read, Article
+        can :manage, Article, :user_id => user.id
+      else
+        # Guest user are not allowed
+      end
 
-To reload your controllers and models after launching the console run
-<tt>reload!</tt>
+    end
+  end
 
-More information about irb can be found at:
-link:http://www.rubycentral.org/pickaxe/irb.html
+More details about CanCan ability on https://github.com/ryanb/cancan/wiki/Defining-Abilities
 
+Update your views to show the owner of an article
 
-== dbconsole
+/app/views/articles/index.html.erb should looks like this
 
-You can go to the command line of your database directly through <tt>rails
-dbconsole</tt>. You would be connected to the database with the credentials
-defined in database.yml. Starting the script without arguments will connect you
-to the development database. Passing an argument will connect you to a different
-database, like <tt>rails dbconsole production</tt>. Currently works for MySQL,
-PostgreSQL and SQLite 3.
+  <h1>Listing articles</h1>
 
-== Description of Contents
+  <table>
+    <tr>
+      <th>Title</th>
+      <th>Content</th>
+      <th>Owner</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
 
-The default directory structure of a generated Ruby on Rails application:
+  <% @articles.each do |article| %>
+    <tr>
+      <td><%= article.title %></td>
+      <td><%= article.content %></td>
+      <td><%= article.user.email %></td>
+      <td><%= link_to 'Show', article %></td>
+      <td><%= link_to 'Edit', edit_article_path(article) %></td>
+      <td><%= link_to 'Destroy', article, confirm: 'Are you sure?', method: :delete %></td>
+    </tr>
+  <% end %>
+  </table>
 
-  |-- app
-  |   |-- assets
-  |       |-- images
-  |       |-- javascripts
-  |       `-- stylesheets
-  |   |-- controllers
-  |   |-- helpers
-  |   |-- mailers
-  |   |-- models
-  |   `-- views
-  |       `-- layouts
-  |-- config
-  |   |-- environments
-  |   |-- initializers
-  |   `-- locales
-  |-- db
-  |-- doc
-  |-- lib
-  |   `-- tasks
-  |-- log
-  |-- public
-  |-- script
-  |-- test
-  |   |-- fixtures
-  |   |-- functional
-  |   |-- integration
-  |   |-- performance
-  |   `-- unit
-  |-- tmp
-  |   |-- cache
-  |   |-- pids
-  |   |-- sessions
-  |   `-- sockets
-  `-- vendor
-      |-- assets
-          `-- stylesheets
-      `-- plugins
+  <br />
 
-app
-  Holds all the code that's specific to this particular application.
+  <%= link_to 'New Article', new_article_path %>
 
-app/assets
-  Contains subdirectories for images, stylesheets, and JavaScript files.
+/app/views/articles/show.html.erb should looks like this
 
-app/controllers
-  Holds controllers that should be named like weblogs_controller.rb for
-  automated URL mapping. All controllers should descend from
-  ApplicationController which itself descends from ActionController::Base.
+  <p id="notice"><%= notice %></p>
 
-app/models
-  Holds models that should be named like post.rb. Models descend from
-  ActiveRecord::Base by default.
+  <p>
+    <b>Title:</b>
+    <%= @article.title %>
+  </p>
 
-app/views
-  Holds the template files for the view that should be named like
-  weblogs/index.html.erb for the WeblogsController#index action. All views use
-  eRuby syntax by default.
+  <p>
+    <b>Owner:</b>
+    <%= @article.user.email %>
+  </p>
 
-app/views/layouts
-  Holds the template files for layouts to be used with views. This models the
-  common header/footer method of wrapping views. In your views, define a layout
-  using the <tt>layout :default</tt> and create a file named default.html.erb.
-  Inside default.html.erb, call <% yield %> to render the view using this
-  layout.
+  <p>
+    <b>Content:</b>
+    <%= @article.content %>
+  </p>
 
-app/helpers
-  Holds view helpers that should be named like weblogs_helper.rb. These are
-  generated for you automatically when using generators for controllers.
-  Helpers can be used to wrap functionality for your views into methods.
+  <%= link_to 'Edit', edit_article_path(@article) %> |
+  <%= link_to 'Back', articles_path %>
 
-config
-  Configuration files for the Rails environment, the routing map, the database,
-  and other dependencies.
+Note: If you have created some articles before we add the "article belongs to user" functionality,
+I suggest you to reset your database by running
 
-db
-  Contains the database schema in schema.rb. db/migrate contains all the
-  sequence of Migrations for your schema.
+  rake db:reset
 
-doc
-  This directory is where your application documentation will be stored when
-  generated using <tt>rake doc:app</tt>
+Refresh your browser, create and article, sign in with an another user and try to edit an article, CanCan should denied you ! Cool !
 
-lib
-  Application specific libraries. Basically, any kind of custom code that
-  doesn't belong under controllers, models, or helpers. This directory is in
-  the load path.
+Now let's make your views a bit prettier by hiding links if an user have no access on it.
 
-public
-  The directory available for the web server. Also contains the dispatchers and the
-  default HTML files. This should be set as the DOCUMENT_ROOT of your web
-  server.
+In /app/views/articles/index.html.erb lets hide edit and destroy. Your file should looks like this
 
-script
-  Helper scripts for automation and generation.
+  <h1>Listing articles</h1>
 
-test
-  Unit and functional tests along with fixtures. When using the rails generate
-  command, template test files will be generated for you and placed in this
-  directory.
+  <table>
+    <tr>
+      <th>Title</th>
+      <th>Content</th>
+      <th>Owner</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
 
-vendor
-  External libraries that the application depends on. Also includes the plugins
-  subdirectory. If the app has frozen rails, those gems also go here, under
-  vendor/rails/. This directory is in the load path.
+  <% @articles.each do |article| %>
+    <tr>
+      <td><%= article.title %></td>
+      <td><%= article.content %></td>
+      <td><%= article.user.email %></td>
+      <td><%= link_to 'Show', article %></td>
+      <td>
+        <% if can? :edit, article %>
+          <%= link_to 'Edit', edit_article_path(article) %>
+        <% end %>
+      </td>
+      <td>
+        <% if can? :destroy, article %>
+          <%= link_to 'Destroy', article, confirm: 'Are you sure?', method: :delete %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+  </table>
+
+  <br />
+
+  <%= link_to 'New Article', new_article_path %>
+
+Hide it too in /app/views/articles/show.html.erb. Your file should looks like this
+
+  <p id="notice"><%= notice %></p>
+
+  <p>
+    <b>Title:</b>
+    <%= @article.title %>
+  </p>
+
+  <p>
+    <b>Owner:</b>
+    <%= @article.user.email %>
+  </p>
+
+  <p>
+    <b>Content:</b>
+    <%= @article.content %>
+  </p>
+
+  <% if can? :edit, Article %>
+    <%= link_to 'Edit', edit_article_path(@article) %> |
+  <% end %>
+  <%= link_to 'Back', articles_path %>
+
+Refresh your navigator, sign in with a different user, magic !, edit and destroy links are hidden.
+
+Cool ! Devise and CanCan are perfectly implemented and works well !
+
+= Questions ?
+
+Create a new issue or {Send me a message}[https://github.com/inbox/new/Nebj]
