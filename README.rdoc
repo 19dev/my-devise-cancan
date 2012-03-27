@@ -6,6 +6,22 @@
 
 - cancan: devise + kullanıcıların yetkilendirilmesi
 
+= Ne yapacaksınız?
+
+Kodlar,
+
+  $ git clone git@github.com:seyyah/my-devise-cancan.git
+  $ cd my-devise-cancan/
+  $ git checkout cancan
+  $ rake db:migrate
+  $ rails s --binding=1.2.3.4 --port=3001
+
+Test,
+
+- yerel http://1.2.3.4:3001/
+
+- Heroku: http://my-devise-cancan.heroku.com/
+
 = Introduction
 
 This is an easy step-by-step demonstration of how to quickly set up a
