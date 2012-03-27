@@ -16,8 +16,16 @@
     <td><%= article.content %></td>
     <td><%= article.user.email %></td>
     <td><%= link_to 'Show', article %></td>
-    <td><%= link_to 'Edit', edit_article_path(article) %></td>
-    <td><%= link_to 'Destroy', article, confirm: 'Are you sure?', method: :delete %></td>
+    <td>
+      <% if can? :edit, article %>
+        <%= link_to 'Edit', edit_article_path(article) %>
+      <% end %>
+    </td>
+    <td>
+      <% if can? :destroy, article %>
+        <%= link_to 'Destroy', article, confirm: 'Are you sure?', method: :delete %>
+      <% end %>
+    </td>
   </tr>
 <% end %>
 </table>

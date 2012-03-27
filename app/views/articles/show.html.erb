@@ -16,5 +16,7 @@
 </p>
 
 
-<%= link_to 'Edit', edit_article_path(@article) %> |
+<% if can? :edit, @article %>
+  <%= link_to 'Edit', edit_article_path(@article) %> |
+<% end %>
 <%= link_to 'Back', articles_path %>
