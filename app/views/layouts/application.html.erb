@@ -8,6 +8,11 @@
 </head>
 <body>
 
+  <% if user_signed_in? %>
+    Başarılı giriş yaptınız. Hoşgeldin <%= current_user.email %> |
+    <%= link_to "Çıkış", destroy_user_session_path, :method => :delete %>
+  <% end %>
+
 <%= yield %>
 
 </body>
