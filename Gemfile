@@ -5,6 +5,7 @@ gem 'sqlite3'
 gem 'execjs'
 gem 'therubyracer'
 gem 'devise'
+gem 'cancan'
 
 group :assets do
   gem 'sass-rails',   '~> 3.2.3'
