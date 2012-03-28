@@ -1,46 +1,8 @@
 == Ne yaptık?
 
-Komutlar,
+Komutlar, öncelikle devise dalı oluşturuldu, sonra,
 
-  $ rails new my-devise-cancan
-  $ cd my-devise-cancan
 
-  $ vim Gemfile
-  gem 'devise'
-
-  gem 'execjs'
-  gem 'therubyracer'
-
-  $ bundle
-
-  $ rails g devise:install
-
-  $ rails g devise User
-
-  $ rm -rf public/index.html
-
-  $ rails generate scaffold Article title:string content:text
-
-  $ rake db:migrate
-
-  $ vim config/routes
-  root :to => 'articles#index'
-
-  $ rails s --binding=1.2.3.4 --port=3001
-
-Test için http://1.2.3.4:3001/ adresine gidin, kullanıcı giriş yapmadığı
-halde article girebildiğini göreceksiniz. Şimdi kısıtlamayı ekleyelim,
-
-  $ vim app/controllers/application_controller.rb
-  before_filter :authenticate_user
-
-Layout'ta hoşgeldin mesajı verelim ve çıkış için link verelim,
-
-  $ vim app/views/layouts/application.html.erb
-  <% if user_signed_in? %>
-    Hi, you are signed in with <%= current_user.email %> |
-    <%= link_to "Sign out", destroy_user_session_path, :method => :delete %>
-  <% end %>
 
 Test için http://1.2.3.4:3001/ adresini tekrardan ziyaret edin, giriş yapmaya
 zorlayacak, giriş yapıldığında üstte hoşgeldiniz mesajı görülecek. Giriş yapmış
@@ -50,5 +12,5 @@ Heroku: http://my-devise.herokuapp.com/
 
 == Kaynakça
 
-Orjinal metin:
-https://github.com/NebJ/demo-devise-cancan/blob/master/README.rdoc
+-
+https://github.com/plataformatec/devise/wiki/How-To%3a-Allow-users-to-sign-in-using-their-username-or-email-address
