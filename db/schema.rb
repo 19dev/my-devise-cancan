@@ -13,8 +13,12 @@
 
 ActiveRecord::Schema.define(:version => 20120328063505) do
 
-# Could not dump table "articles" because of following StandardError
-#   Unknown type 'reference' for column 'user_id'
+  create_table "articles", :force => true do |t|
+    t.string   "title"
+    t.text     "content"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "users", :force => true do |t|
     t.string   "email",                  :default => "", :null => false
