@@ -46,6 +46,8 @@ Test için http://1.2.3.4:3001/ adresini tekrardan ziyaret edin, giriş yapmaya
 zorlayacak, giriş yapıldığında üstte hoşgeldiniz mesajı görülecek. Giriş yapmış
 kullanıcı CRUD yeteneğine sahip olacak, Guest hiçbir şey yapamaz.
 
+Heroku: http://my-devise.herokuapp.com/
+
 == Kaynakça
 
 Orjinal metin:
