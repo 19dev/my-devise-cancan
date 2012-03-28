@@ -1,6 +1,6 @@
 class AddUserOnArticles < ActiveRecord::Migration
   def up
-    add_column :articles, :user_id, :reference
+    add_column :articles, :user_id, :integer
   end
 
   def down
