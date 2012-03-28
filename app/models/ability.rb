@@ -7,6 +7,7 @@ class Ability
     if user.persisted?
       can :read, Article
       can :manage, Article, :user_id => user.id
+      can :manage, :all if user.role == "admin"
     else
       # Guest user are not allowed
     end
